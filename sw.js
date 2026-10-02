@@ -1,5 +1,20 @@
-const CACHE = "home-ops-v2";
-const APP_SHELL = ["./", "./index.html", "./styles.css", "./app.js", "./manifest.webmanifest", "./assets/icon.svg"];
+const CACHE = "home-ops-v3";
+const APP_SHELL = [
+  "./",
+  "./index.html",
+  "./styles.css",
+  "./app.js",
+  "./app.bundle.001.b64",
+  "./app.bundle.002.b64",
+  "./app.bundle.003.b64",
+  "./app.bundle.004.b64",
+  "./app.bundle.005.b64",
+  "./app.bundle.006.b64",
+  "./app.bundle.007.b64",
+  "./app.bundle.008.b64",
+  "./manifest.webmanifest",
+  "./assets/icon.svg",
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(APP_SHELL)));
