@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#24473b" />
+    <meta name="description" content="A private household command center." />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./styles.css" />
+    <title>Home Ops</title>
+  </head>
+  <body>
+    <div id="app">
+      <section id="auth-view" class="auth-shell">
+        <div class="brand-mark" aria-hidden="true">H</div>
+        <p class="eyebrow">PRIVATE HOUSEHOLD DASHBOARD</p>
+        <h1>Home Ops</h1>
+        <p class="auth-copy">A calmer way to answer, “What do we need to get done today?”</p>
+        <form id="login-form" class="auth-card">
+          <label>Email<input id="login-email" type="email" autocomplete="email" required /></label>
+          <label>Password<input id="login-password" type="password" autocomplete="current-password" required /></label>
+          <button class="primary wide" type="submit">Sign in</button>
+          <p id="auth-message" class="form-message" role="alert"></p>
+        </form>
+      </section>
+
+      <div id="shell" class="app-shell hidden">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">HOME OPS</p>
+            <h1 id="page-title">Today</h1>
+          </div>
+          <button id="header-add" class="icon-button" aria-label="Quick add">+</button>
+        </header>
+
+        <main id="page" class="page" tabindex="-1"></main>
+
+        <button id="fab" class="fab" aria-label="Quick add">+</button>
+        <nav id="bottom-nav" class="bottom-nav" aria-label="Main navigation">
+          <button data-tab="today" class="active"><span>⌂</span>Today</button>
+          <button data-tab="routines"><span>↻</span>Routines</button>
+          <button data-tab="calendar"><span>□</span>Calendar</button>
+          <button data-tab="tasks"><span>✓</span>Tasks</button>
+          <button data-tab="weekly"><span>☀</span>Reset</button>
+          <button data-tab="settings"><span>⚙</span>Settings</button>
+        </nav>
+      </div>
+    </div>
+
+    <div id="modal-root"></div>
+    <div id="toast-root" class="toast-root" aria-live="polite"></div>
+
+    <script src="./config.js"></script>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
