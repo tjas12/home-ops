@@ -1,4 +1,4 @@
-const CACHE = "home-ops-v3";
+const CACHE = "home-ops-v4";
 const APP_SHELL = [
   "./",
   "./index.html",
