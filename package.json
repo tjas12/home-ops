@@ -1,0 +1,11 @@
+{
+  "name": "home-ops",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build-static.mjs",
+    "dev": "node server.mjs",
+    "check": "node --check app.js && node --check server.mjs && node --check build-static.mjs"
+  }
+}
