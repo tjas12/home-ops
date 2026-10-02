@@ -1,0 +1,17 @@
+{
+  "name": "Home Ops",
+  "short_name": "Home Ops",
+  "description": "A private household command center.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f6f3eb",
+  "theme_color": "#24473b",
+  "icons": [
+    {
+      "src": "./assets/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
