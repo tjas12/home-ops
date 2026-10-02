@@ -1,0 +1,7 @@
+project_id = "czvmetstglwodofuznjp"
+
+[functions.send-home-ops-email]
+verify_jwt = true
+
+[functions.process-notifications]
+verify_jwt = false
