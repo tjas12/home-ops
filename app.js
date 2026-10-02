@@ -7,6 +7,8 @@ const chunkFiles = [
   "./app.bundle.006.b64",
   "./app.bundle.007.b64",
   "./app.bundle.008.b64",
+  "./app.bundle.009.b64",
+  "./app.bundle.010.b64",
 ];
 
 async function loadHomeOpsApp() {
