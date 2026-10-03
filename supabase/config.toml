@@ -1,5 +1,3 @@
-project_id = "czvmetstglwodofuznjp"
-
 [functions.send-home-ops-email]
 verify_jwt = true
 
