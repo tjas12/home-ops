@@ -1,34 +1,58 @@
 # Home Ops
 
-A mobile-first private household command center for two approved users. The frontend is a build-free PWA; Supabase provides authentication, shared Postgres persistence, row-level security, and server functions. Resend handles email.
+A mobile-first household command center that runs as one shared static PWA with separate private household workspaces. Supabase provides Auth, Postgres persistence, Row Level Security, invitations, and Edge Functions. Resend handles email delivery.
 
 ## What is included
 
-- Approved-email login for Husband and Wife
-- Household-scoped row-level security on every shared table
-- Today dashboard with progress, overdue items, routines, events, reminders, and bills
-- Task, reminder, event, bill, and routine CRUD
-- Helpful empty states, loading indicators, delete confirmations, and mobile-friendly forms
-- Exact date-string calendar matching (no UTC conversion of date-only values)
-- Daily routine completion records
-- Weekly Reset drafting and persistence
-- Refresh on focus, tab resume, and page restore
-- Installable PWA shell
-- Server-side Resend test email and scheduled notification processor
-- Notification delivery log and household notification settings
+- Supabase email/password login and account creation
+- Multi-household onboarding: create a household or join with an invite
+- Household membership roles: `owner` and `member`
+- Household-scoped Row Level Security across shared data
+- Member-based assignment with legacy `assigned_to` preserved for migration safety
+- Today dashboard, tasks, reminders, calendar events, bills, routines, weekly reset, and settings
+- Household settings with members, invite link generation, and owner-only member removal
+- Installable mobile-first PWA shell for iPhone and Android
+- Server-side email test and scheduled notification processor
 
-## Run locally
+## 1. Supabase setup
+
+Create a Supabase project, then run migrations in order:
+
+1. `supabase/migrations/202606240001_home_ops.sql`
+2. `supabase/migrations/202606240002_notification_triggers.sql`
+3. `supabase/migrations/202610020001_multi_household_accounts.sql`
+
+The third migration upgrades the original two-user private schema into the multi-household model. It is incremental and keeps existing data.
+
+It adds:
+
+- `household_members`
+- `household_invites`
+- `assigned_user_id` columns
+- user-level notification/push tables
+- membership-aware RLS helpers
+- invite acceptance and member-removal RPC functions
+
+Existing `approved_access` records can remain for old accounts, but new normal signups no longer require manual whitelist rows.
+
+## 2. Configure the web app
+
+This is a build-free static app, not Vite or Next.js. The browser reads Supabase config from `config.js`.
+
+Install and run locally:
 
 ```bash
 npm install
 npm run dev
 ```
 
-Then open `http://localhost:3000`.
+Then open:
 
-## Configure Supabase
+```text
+http://localhost:3000
+```
 
-Copy `config.example.js` to `config.js` and add your public Supabase values:
+Create `config.js` from `config.example.js`:
 
 ```js
 window.HOME_OPS_CONFIG = {
@@ -37,12 +61,57 @@ window.HOME_OPS_CONFIG = {
 };
 ```
 
-Never put a Supabase service-role key or Resend API key in browser files.
+Never put a service-role key or Resend key in `config.js`.
 
-## Build
+## 3. Deploy static app
 
-```bash
-npm run build
+GitHub Pages can serve the app from the repository root.
+
+Recommended Pages settings:
+
+- Source: Deploy from branch
+- Branch: `main`
+- Folder: `/root`
+
+The app remains static-host compatible. Backend logic stays in Supabase and Supabase Edge Functions.
+
+## 4. Configure email functions
+
+Set these Supabase Edge Function secrets:
+
+```text
+RESEND_API_KEY
+HOME_OPS_FROM_EMAIL
+CRON_SECRET
 ```
 
-The static app is copied into `dist/`.
+Deploy:
+
+```text
+supabase functions deploy send-home-ops-email
+supabase functions deploy process-notifications --no-verify-jwt
+```
+
+Schedule `process-notifications` every few minutes using Supabase Cron/pg_cron or an external scheduler. Send `CRON_SECRET` in the `x-cron-secret` header.
+
+## 5. Verification checklist
+
+- Create User A1, create Household A, add a task/event/routine.
+- Generate an invite, create/log in as User A2, accept the invite.
+- Confirm A1 and A2 see Household A data.
+- Create User B1, create Household B.
+- Confirm Household B starts empty and cannot see Household A members or data.
+- Assign tasks to Everyone, A1, and A2.
+- Confirm assignment labels show household member names.
+- Try an expired/invalid/reused invite and confirm it fails cleanly.
+- Test on iPhone Home Screen PWA and desktop browser.
+
+## Date safety
+
+Postgres `date` columns are returned as `YYYY-MM-DD`. The app avoids UTC conversion for date-only calendar logic. Calendar dots compare exact date strings:
+
+```js
+event.event_date === formatLocalDate(cellDate)
+```
+
+Times are stored separately and rendered through `formatTime12Hour`.
