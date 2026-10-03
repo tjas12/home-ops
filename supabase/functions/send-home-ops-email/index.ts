@@ -31,22 +31,38 @@ Deno.serve(async (request) => {
       .select("id, email, household_id")
       .eq("id", authData.user.id)
       .single();
-    if (profileError || !profile) throw new Error("Approved Home Ops access required.");
+    if (profileError || !profile) throw new Error("Home Ops profile required.");
+
+    const { data: membership } = await admin
+      .from("household_members")
+      .select("household_id")
+      .eq("user_id", profile.id)
+      .limit(1)
+      .maybeSingle();
+    const householdId = profile.household_id || membership?.household_id;
+    if (!householdId) throw new Error("Join or create a household before sending email.");
 
     const body = await request.json();
     const recipient = body.to || profile.email;
-    const { data: allowedRecipient } = await admin
-      .from("users")
-      .select("id")
-      .eq("household_id", profile.household_id)
-      .eq("email", recipient.toLowerCase())
-      .maybeSingle();
+    const { data: memberships } = await admin
+      .from("household_members")
+      .select("user_id")
+      .eq("household_id", householdId);
+    const memberIds = (memberships || []).map((member) => member.user_id);
+    const { data: allowedRecipient } = memberIds.length
+      ? await admin
+          .from("users")
+          .select("id")
+          .in("id", memberIds)
+          .eq("email", recipient.toLowerCase())
+          .maybeSingle()
+      : { data: null };
     if (!allowedRecipient) throw new Error("Recipient is not a member of this household.");
 
     const notificationId = crypto.randomUUID();
     await admin.from("notifications").insert({
       id: notificationId,
-      household_id: profile.household_id,
+      household_id: householdId,
       user_id: profile.id,
       type: body.test ? "test_email" : "manual_email",
       title: body.subject,
@@ -63,18 +79,36 @@ Deno.serve(async (request) => {
         Authorization: `Bearer ${resendKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ from, to: [recipient], subject: body.subject, text: body.text }),
+      body: JSON.stringify({
+        from,
+        to: [recipient],
+        subject: body.subject,
+        text: body.text,
+      }),
     });
     const result = await response.json();
     if (!response.ok) {
-      await admin.from("notifications").update({ status: "failed", error_message: result?.message || JSON.stringify(result) }).eq("id", notificationId);
+      await admin.from("notifications").update({
+        status: "failed",
+        error_message: result?.message || JSON.stringify(result),
+      }).eq("id", notificationId);
       throw new Error(result?.message || "Resend rejected the email.");
     }
 
-    await admin.from("notifications").update({ status: "sent", sent_at: new Date().toISOString(), error_message: null }).eq("id", notificationId);
-    return new Response(JSON.stringify({ ok: true, id: result.id }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    await admin.from("notifications").update({
+      status: "sent",
+      sent_at: new Date().toISOString(),
+      error_message: null,
+    }).eq("id", notificationId);
+
+    return new Response(JSON.stringify({ ok: true, id: result.id }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (error) {
     console.error(error);
-    return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
