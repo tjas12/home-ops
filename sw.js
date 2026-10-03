@@ -1,48 +1,62 @@
-const CACHE = "home-ops-v5";
-const APP_SHELL = [
+const CACHE = "home-ops-v4";
+const CORE = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
-  "./app.bundle.001.b64",
-  "./app.bundle.002.b64",
-  "./app.bundle.003.b64",
-  "./app.bundle.004.b64",
-  "./app.bundle.005.b64",
-  "./app.bundle.006.b64",
-  "./app.bundle.007.b64",
-  "./app.bundle.008.b64",
-  "./app.bundle.009.b64",
-  "./app.bundle.010.b64",
+  "./config.js",
   "./manifest.webmanifest",
   "./assets/icon.svg",
 ];
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(APP_SHELL)));
+  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(CORE)));
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key))))
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key)))
+    )
   );
   self.clients.claim();
 });
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
-  if (new URL(event.request.url).pathname.endsWith("/config.js")) {
-    event.respondWith(fetch(event.request, { cache: "no-store" }));
-    return;
-  }
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        const copy = response.clone();
-        caches.open(CACHE).then((cache) => cache.put(event.request, copy));
+        const clone = response.clone();
+        caches.open(CACHE).then((cache) => cache.put(event.request, clone));
         return response;
       })
-      .catch(() => caches.match(event.request))
+      .catch(() => caches.match(event.request).then((cached) => cached || caches.match("./index.html")))
+  );
+});
+
+self.addEventListener("push", (event) => {
+  const data = event.data?.json?.() || {};
+  const title = data.title || "Home Ops";
+  const options = {
+    body: data.body || data.message || "You have a Home Ops update.",
+    icon: "./assets/icon.svg",
+    badge: "./assets/icon.svg",
+    data: data.data || {},
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if ("focus" in client) return client.focus();
+      }
+      if (clients.openWindow) return clients.openWindow("./");
+      return undefined;
+    })
   );
 });
