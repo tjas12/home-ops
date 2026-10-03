@@ -42,6 +42,13 @@ button { cursor: pointer; }
 .auth-shell h1 { margin: 0; font: 700 42px Georgia, serif; }
 .auth-copy { max-width: 370px; margin: 12px auto 24px; color: var(--muted); line-height: 1.55; }
 .auth-card { width: min(390px, calc(100vw - 40px)); padding: 22px; border-radius: 24px; background: var(--paper); box-shadow: var(--shadow); text-align: left; }
+.auth-tabs {
+  width: min(390px, calc(100vw - 40px)); margin: 0 auto 12px; display: grid; grid-template-columns: 1fr 1fr;
+  padding: 4px; border: 1px solid var(--line); border-radius: 16px; background: rgba(255,253,248,.7);
+}
+.auth-tabs button { border: 0; border-radius: 12px; min-height: 38px; background: transparent; color: var(--muted); font-weight: 800; }
+.auth-tabs button.active { background: var(--green); color: white; }
+.link-button { width: 100%; border: 0; background: transparent; color: var(--green); min-height: 38px; font-weight: 800; }
 
 .app-shell { min-height: 100dvh; padding-bottom: 94px; }
 .topbar {
@@ -107,6 +114,9 @@ button { cursor: pointer; }
 .empty { padding: 22px; text-align: center; color: var(--muted); border: 1px dashed #c9c5bb; border-radius: 18px; }
 .empty p { margin: 0 0 12px; line-height: 1.45; }
 .muted-copy { color: var(--muted); line-height: 1.5; }
+.member-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.member-row:last-child { border-bottom: 0; }
+.invite-card input { margin-top: 8px; font-size: 12px; }
 
 .primary, .secondary, .danger, .soft-button {
   min-height: 44px; border-radius: 14px; padding: 0 16px; font-weight: 750; border: 1px solid transparent;
