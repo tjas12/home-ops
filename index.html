@@ -6,9 +6,6 @@
     <meta name="theme-color" content="#24473b" />
     <meta name="description" content="A private household command center." />
     <link rel="manifest" href="./manifest.webmanifest" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="Home Ops" />
     <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="./styles.css" />
     <title>Home Ops</title>
@@ -20,10 +17,16 @@
         <p class="eyebrow">PRIVATE HOUSEHOLD DASHBOARD</p>
         <h1>Home Ops</h1>
         <p class="auth-copy">A calmer way to answer, “What do we need to get done today?”</p>
+        <div class="auth-tabs" role="tablist" aria-label="Authentication mode">
+          <button id="auth-mode-login" class="active" type="button">Log in</button>
+          <button id="auth-mode-signup" type="button">Create account</button>
+        </div>
         <form id="login-form" class="auth-card">
+          <label id="auth-name-row" class="hidden">Display name<input id="signup-name" type="text" autocomplete="name" /></label>
           <label>Email<input id="login-email" type="email" autocomplete="email" required /></label>
           <label>Password<input id="login-password" type="password" autocomplete="current-password" required /></label>
           <button class="primary wide" type="submit">Sign in</button>
+          <button id="forgot-password" class="link-button" type="button">Forgot password?</button>
           <p id="auth-message" class="form-message" role="alert"></p>
         </form>
       </section>
