@@ -207,3 +207,5 @@ button:disabled { cursor: not-allowed; opacity: .62; }
   .sheet-head, .sheet-body, .sheet-foot { padding-left: 16px; padding-right: 16px; }
   input, textarea, select { font-size: 16px; }
 }
+#upcoming-range { width: auto; max-width: 100%; font-size: 0.8rem; padding: 6px; margin: 0; }
+.section-head h2:has(#upcoming-range) { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }

@@ -4,3 +4,8 @@ Thumbs.db
 .env
 .env.*
 .supabase/
+node_modules/
+dist/
+test-artifacts/
+dev-server.*
+supabase/.temp/

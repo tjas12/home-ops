@@ -1,6 +1,7 @@
 import { cp, mkdir, rm } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { buildBundles } from "./build-bundles.mjs";
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const dist = path.join(root, "dist");
@@ -13,8 +14,10 @@ const entries = [
   "manifest.webmanifest",
   "sw.js",
   "assets",
+  ...Array.from({ length: 10 }, (_, i) => `app.bundle.${String(i + 1).padStart(3, "0")}.b64`),
 ];
 
+await buildBundles();
 await rm(dist, { recursive: true, force: true });
 await mkdir(dist, { recursive: true });
 
