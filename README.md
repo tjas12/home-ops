@@ -37,12 +37,19 @@ Existing `approved_access` records can remain for old accounts, but new normal s
 
 ## 2. Configure the web app
 
-This is a build-free static app, not Vite or Next.js. The browser reads Supabase config from `config.js`.
+This is a static ES-module app. The browser reads Supabase config from `config.js`.
+The canonical application is `src/app.js`. Keep edits there; `app.js` is the unchanged known-good loader.
+`build-bundles.mjs` encodes UTF-8 source with deterministic CRLF line endings and partitions the base64 into ten ordered chunks.
+`build-static.mjs` regenerates those chunks and copies the loader, all ten chunks, push module, CSS, manifest, worker and assets into `dist/`.
+The initial reconstructed source reproduced the deployed module byte for byte (SHA-256 `af4a5a84b7f89e69587c8541d4ae5c7f4c3bd1a2cdbe30fb9e8c5353d07934f9`).
 
 Install and run locally:
 
 ```bash
-npm install
+corepack pnpm install --frozen-lockfile
+npm run build
+npm run check
+npm test
 npm run dev
 ```
 
@@ -108,10 +115,40 @@ Schedule `process-notifications` every few minutes using Supabase Cron/pg_cron o
 
 ## Date safety
 
-Postgres `date` columns are returned as `YYYY-MM-DD`. The app avoids UTC conversion for date-only calendar logic. Calendar dots compare exact date strings:
+Postgres `date` columns are returned as `YYYY-MM-DD`. The app avoids UTC conversion for date-only calendar logic. Calendar dots and selected-day lists include every day in an inclusive event span:
 
 ```js
-event.event_date === formatLocalDate(cellDate)
+event.event_date <= day && (event.end_date || event.event_date) >= day
 ```
 
 Times are stored separately and rendered through `formatTime12Hour`.
+
+## Feature migrations and release order
+
+Apply the existing migrations first, then the two new incremental migrations:
+
+- `20261004012135_home_ops_feature_requests.sql`: optional task/event reminder lead times, end-date checks, scheduled weekly items with membership RLS and cross-household-safe references, and privileged scheduling RPCs.
+- `20261004012220_notification_badge_cleanup.sql`: pending cancellation, delivered-notification retirement on completion/deletion, stale unread cleanup and unread indexes.
+
+The production project already has push registration tables/configuration, dispatch uniqueness and VAPID keys. This change preserves them. For a fresh environment, provision the existing push backend before running push tests against that environment.
+Deploy the migrations before the modified `send-home-ops-push` and `process-notifications` Edge Functions. The recovered push function uses its existing cron-header authentication and registration protocol.
+Run its scheduler at least every five minutes (one minute recommended). Postgres computes task/event due timestamps in `America/Chicago`, subtracts 5/30/60 minutes and checks a five-minute delivery window, including midnight and DST boundaries. NULL means no pre-reminder; a date and time are required for a timed pre-reminder. Standalone reminder/routine schedules remain unchanged.
+Occurrence keys contain source date, time and selected lead time. The unique dispatch is claimed before transport. Ambiguous failures retain the claim to prioritize avoiding duplicate delivery; inspect function logs for interrupted dispatches.
+
+Never merge until real login, existing household access and RLS checks pass. Backend changes and frontend release must be coordinated. This branch has not been deployed.
+
+## Weekly Reset and Today
+
+All seven freeform fields remain editable. Scheduled Items are separate structured rows linked to the current weekly plan. Nothing parses or converts old text. An unsaved current plan is created when the first scheduled item is saved.
+Today shows Scheduled Today, upcoming scheduled items when present, and completed weekly items. Weekly appointments also appear on Calendar. Upcoming Events defaults to an inclusive 14-day window; Next Month ends on the corresponding date next month, clamped for shorter months. The selector is stored locally.
+
+## PWA and notification badges
+
+Android: open in Chrome and install from its menu. iPhone: open in Safari, choose Add to Home Screen, then enable push from the installed app's Settings. Permission and subscription registration remain in `push.js`.
+Worker cache `home-ops-v6` includes all bundle chunks and removes older Home Ops caches. Authenticated Supabase responses are not cached. Browsers without badge APIs continue normally.
+Badge counts use sent, due, unread notification records filtered to the signed-in user across accessible households. Future pending notifications and read/completed records do not count. Completion/deletion triggers retire related notifications, the app refreshes its badge after completion, opening/focus, and reading, and zero clears it. Push payloads carry numeric unread counts and notification/source IDs. Clicking a notification marks that user's record read after authentication, including when opening a closed app. A background device updates its badge on its next push or app open.
+
+## Verification
+
+Use Node 24 or newer and the committed dependency lockfile. `npm test` runs deterministic build tests, isolated Postgres migration/RLS tests, generated-app browser tests, push transport/assignment/concurrency tests and worker badge tests. Browser tests use mock Supabase responses; they do not certify production credentials, email confirmation or real push delivery. On Windows they use installed Edge; set `HOME_OPS_BROWSER_CHANNEL=chrome` to use Chrome. Elsewhere install Playwright Chromium (`pnpm exec playwright install chromium`).
+Screenshots from desktop and 390/412px mobile viewports are written to ignored `test-artifacts/`. Physical iPhone/Android installation, permission, background push and OS badges require device checks. See `IMPLEMENTATION_REPORT.md` for exact scope and outstanding release gates.

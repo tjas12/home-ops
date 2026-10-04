@@ -28,7 +28,8 @@ Deno.serve(async (request) => {
     );
     const localDate = `${chicagoParts.year}-${chicagoParts.month}-${chicagoParts.day}`;
     const localTime = `${chicagoParts.hour}:${chicagoParts.minute}`;
-    const todayStart = new Date(`${localDate}T00:00:00-05:00`).toISOString();
+    const { data: todayStart, error: dayStartError } = await admin.rpc("home_ops_chicago_day_start", { p_date: localDate });
+    if (dayStartError) throw dayStartError;
 
     // Generate routine nudges server-side so they do not depend on an open browser.
     const { data: routines } = await admin
@@ -122,6 +123,7 @@ Deno.serve(async (request) => {
       .select("*")
       .eq("status", "pending")
       .eq("delivery_method", "email")
+      .is("read_at", null)
       .lte("scheduled_for", new Date().toISOString())
       .limit(100);
     if (error) throw error;
